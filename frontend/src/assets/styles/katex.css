@@ -1,0 +1,32 @@
+/* KaTeX styles */
+@import 'katex/dist/katex.min.css';
+
+/* KaTeXの数式カスタムスタイル */
+.markdown-preview :deep(.katex) {
+  font-size: 1.1em;
+}
+
+.markdown-preview :deep(.katex-display) {
+  margin: 1em 0;
+  text-align: center;
+}
+
+.markdown-preview :deep(.katex-display .katex) {
+  text-align: left;
+}
+
+/* インライン数式のスタイル */
+.markdown-preview :deep(.katex:not(.katex-display)) {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+
+/* ダークテーマでのKaTeX調整 */
+.markdown-preview :deep(.katex) {
+  color: var(--text-color);
+}
+
+.markdown-preview :deep(.katex .base) {
+  color: var(--text-color);
+}
