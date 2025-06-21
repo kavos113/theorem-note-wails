@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue';
+import { createCodeMirrorEditor, type CodeMirrorInstance } from '../utils/codeMirrorUtils';
 import type { ViewMode } from '../types/viewMode';
 import '../assets/styles/highlight.css';
 import '../assets//styles/katex.css';
@@ -26,6 +27,8 @@ const localContent = ref(props.fileContent);
 const isSaving = ref(false);
 const editorWidth = ref(50); // エディタの幅(%)
 const isResizing = ref(false);
+const editorContainer = ref<HTMLElement>();
+const codeMirrorInstance = ref<CodeMirrorInstance>();
 
 const htmlPreview = ref<string>('');
 
@@ -48,6 +51,10 @@ watch(
   () => props.fileContent,
   (newContent) => {
     localContent.value = newContent;
+    // CodeMirrorの内容も更新
+    if (codeMirrorInstance.value) {
+      codeMirrorInstance.value.updateContent(newContent);
+    }
   },
   { immediate: true }
 );
@@ -56,6 +63,11 @@ const handleContentChange = (event: Event): void => {
   const target = event.target as HTMLTextAreaElement;
   localContent.value = target.value;
   emit('update:fileContent', target.value);
+};
+
+const handleCodeMirrorChange = (content: string): void => {
+  localContent.value = content;
+  emit('update:fileContent', content);
 };
 
 watch(
@@ -120,10 +132,21 @@ onMounted(async () => {
   document.addEventListener('keydown', handleKeyDown);
 
   await nextTick();
+  if (editorContainer.value) {
+    codeMirrorInstance.value = createCodeMirrorEditor(
+      editorContainer.value,
+      localContent.value,
+      handleCodeMirrorChange
+    );
+  }
 });
 
 onUnmounted(() => {
   document.removeEventListener('keydown', handleKeyDown);
+
+  if (codeMirrorInstance.value) {
+    codeMirrorInstance.value.destroy();
+  }
 });
 </script>
 
@@ -135,9 +158,10 @@ onUnmounted(() => {
     <div class="editor-content-split" :class="`view-mode-${viewMode}`">
       <div v-if="viewMode !== 'preview'" class="editor-pane" :style="{ width: getEditorWidth() }">
         <div class="pane-header">エディタ</div>
+        <div ref="editorContainer" class="codemirror-container"></div>
         <textarea
           v-model="localContent"
-          class="markdown-editor"
+          class="markdown-editor hidden"
           @input="handleContentChange"
         ></textarea>
       </div>
@@ -218,6 +242,12 @@ onUnmounted(() => {
   resize: none;
   white-space: pre-wrap;
   word-wrap: break-word;
+}
+
+.codemirror-container {
+  flex: 1;
+  height: 100%;
+  overflow: hidden;
 }
 
 .hidden {
