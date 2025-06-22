@@ -60,6 +60,7 @@ watch(
 );
 
 const handleContentChange = (event: Event): void => {
+    console.log("Content changed:", event);
   const target = event.target as HTMLTextAreaElement;
   localContent.value = target.value;
   emit('update:fileContent', target.value);
