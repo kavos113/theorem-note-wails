@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
 import FileTreeItem from './FileTreeItem.vue';
-import { GetFileTree, GetLastOpened, GetNewDirectoryFileTree } from "../../wailsjs/go/main/App";
-import { backend } from "../../wailsjs/go/models";
+import { GetFileTree, GetLastOpened, GetNewDirectoryFileTree } from '../../wailsjs/go/main/App';
+import { backend } from '../../wailsjs/go/models';
 import FileItem = backend.FileItem;
 
 const props = defineProps<{

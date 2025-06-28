@@ -6,7 +6,7 @@ import '../assets/styles/highlight.css';
 import '../assets//styles/katex.css';
 import { markdownToHtml } from '../utils/markdownUtils';
 import 'highlight.js/styles/github.css';
-import { WriteFile } from "../../wailsjs/go/main/App";
+import { WriteFile } from '../../wailsjs/go/main/App';
 
 interface Props {
   selectedFilePath?: string;
@@ -60,7 +60,7 @@ watch(
 );
 
 const handleContentChange = (event: Event): void => {
-    console.log("Content changed:", event);
+  console.log('Content changed:', event);
   const target = event.target as HTMLTextAreaElement;
   localContent.value = target.value;
   emit('update:fileContent', target.value);

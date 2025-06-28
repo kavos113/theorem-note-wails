@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { backend } from "../../wailsjs/go/models";
+import { backend } from '../../wailsjs/go/models';
 import FileItem = backend.FileItem;
 
 const props = defineProps<{

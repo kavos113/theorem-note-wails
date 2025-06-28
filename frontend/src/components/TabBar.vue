@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { ReadFile } from "../../wailsjs/go/main/App";
+import { ReadFile } from '../../wailsjs/go/main/App';
 
 // タブで開いているファイルの型定義
 export interface OpenFile {
