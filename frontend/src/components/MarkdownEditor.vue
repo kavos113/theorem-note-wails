@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, watch, onMounted, onUnmounted, nextTick, computed } from 'vue';
 import { createCodeMirrorEditor, type CodeMirrorInstance } from '../utils/codeMirrorUtils';
 import type { ViewMode } from '../types/viewMode';
 import '../assets/styles/highlight.css';
 import '../assets//styles/katex.css';
-import { markdownToHtml } from '../utils/markdownUtils';
+import { markdownToHtml, getProjectRoot } from '../utils/markdownUtils';
 import 'highlight.js/styles/github.css';
-import { WriteFile } from '../../wailsjs/go/main/App';
+import { WriteFile, GetFontSettings } from '../../wailsjs/go/main/App';
+import { EventsOn } from '../../wailsjs/runtime';
+import type { backend } from '../../wailsjs/go/models';
 
 interface Props {
   selectedFilePath?: string;
@@ -35,6 +37,18 @@ const htmlPreview = ref<string>('');
 
 // スクロール同期のためのフラグ
 const isSyncingScroll = ref(false);
+const fontSettings = ref<backend.FontSettings>();
+
+// 動的なスタイルを計算
+const editorStyle = computed(() => ({
+  fontFamily: fontSettings.value?.editor_font_family || 'monospace',
+  fontSize: `${fontSettings.value?.editor_font_size || 14}px`
+}));
+
+const previewStyle = computed(() => ({
+  fontFamily: fontSettings.value?.preview_font_family || 'sans-serif',
+  fontSize: `${fontSettings.value?.preview_font_size || 14}px`
+}));
 
 const saveFile = async (): Promise<void> => {
   if (!props.selectedFilePath || isSaving.value) return;
@@ -145,6 +159,12 @@ onMounted(async () => {
     );
   }
   setupScrollListeners();
+
+  // フォント設定を読み込み、変更を監視
+  await loadFontSettings();
+  cleanupFontListener = EventsOn('font-settings-updated', (settings: backend.FontSettings) => {
+    applyFontSettings(settings);
+  });
 });
 
 onUnmounted(() => {
@@ -155,7 +175,32 @@ onUnmounted(() => {
   }
   // スクロールイベントリスナーを削除
   removeScrollListeners();
+  // イベントリスナーをクリーンアップ
+  if (cleanupFontListener) {
+    cleanupFontListener();
+  }
 });
+
+// --- フォント設定 ---
+let cleanupFontListener: () => void;
+
+const applyFontSettings = (settings: backend.FontSettings) => {
+  fontSettings.value = settings;
+  if (codeMirrorInstance.value) {
+    codeMirrorInstance.value.setEditorStyle(editorStyle.value);
+  }
+};
+
+const loadFontSettings = async () => {
+  const rootDir = getProjectRoot();
+  if (!rootDir) return;
+  try {
+    const settings = await GetFontSettings(rootDir);
+    applyFontSettings(settings);
+  } catch (err) {
+    console.error('フォント設定の読み込みに失敗しました:', err);
+  }
+};
 
 // スクロール同期ロジック
 let editorScroller: HTMLElement | null = null;
@@ -164,8 +209,10 @@ const handleEditorScroll = () => {
   if (isSyncingScroll.value || !editorScroller || !previewContainer.value) return;
   isSyncingScroll.value = true;
 
-  const editorScrollRatio = editorScroller.scrollTop / (editorScroller.scrollHeight - editorScroller.clientHeight);
-  previewContainer.value.scrollTop = editorScrollRatio * (previewContainer.value.scrollHeight - previewContainer.value.clientHeight);
+  const editorScrollRatio =
+    editorScroller.scrollTop / (editorScroller.scrollHeight - editorScroller.clientHeight);
+  previewContainer.value.scrollTop =
+    editorScrollRatio * (previewContainer.value.scrollHeight - previewContainer.value.clientHeight);
 
   requestAnimationFrame(() => {
     isSyncingScroll.value = false;
@@ -176,8 +223,11 @@ const handlePreviewScroll = () => {
   if (isSyncingScroll.value || !editorScroller || !previewContainer.value) return;
   isSyncingScroll.value = true;
 
-  const previewScrollRatio = previewContainer.value.scrollTop / (previewContainer.value.scrollHeight - previewContainer.value.clientHeight);
-  editorScroller.scrollTop = previewScrollRatio * (editorScroller.scrollHeight - editorScroller.clientHeight);
+  const previewScrollRatio =
+    previewContainer.value.scrollTop /
+    (previewContainer.value.scrollHeight - previewContainer.value.clientHeight);
+  editorScroller.scrollTop =
+    previewScrollRatio * (editorScroller.scrollHeight - editorScroller.clientHeight);
 
   requestAnimationFrame(() => {
     isSyncingScroll.value = false;
@@ -207,19 +257,25 @@ const removeScrollListeners = () => {
   }
 };
 
-watch(() => props.viewMode, (newMode) => {
-  removeScrollListeners();
-  if (newMode === 'split') {
-    setupScrollListeners();
+watch(
+  () => props.viewMode,
+  (newMode) => {
+    removeScrollListeners();
+    if (newMode === 'split') {
+      setupScrollListeners();
+    }
   }
-});
+);
 
-watch(() => props.selectedFilePath, () => {
-  removeScrollListeners();
-  if (props.viewMode === 'split') {
-    setupScrollListeners();
+watch(
+  () => props.selectedFilePath,
+  () => {
+    removeScrollListeners();
+    if (props.viewMode === 'split') {
+      setupScrollListeners();
+    }
   }
-});
+);
 </script>
 
 <template>
@@ -230,10 +286,11 @@ watch(() => props.selectedFilePath, () => {
     <div class="editor-content-split" :class="`view-mode-${viewMode}`">
       <div v-if="viewMode !== 'preview'" class="editor-pane" :style="{ width: getEditorWidth() }">
         <div class="pane-header">エディタ</div>
-        <div ref="editorContainer" class="codemirror-container"></div>
+        <div ref="editorContainer" class="codemirror-container" :style="editorStyle"></div>
         <textarea
           v-model="localContent"
           class="markdown-editor hidden"
+          :style="editorStyle"
           @input="handleContentChange"
         ></textarea>
       </div>
@@ -241,7 +298,12 @@ watch(() => props.selectedFilePath, () => {
       <div v-if="viewMode !== 'editor'" class="preview-pane" :style="{ width: getPreviewWidth() }">
         <div class="pane-header">プレビュー</div>
         <!-- eslint-disable-next-line vue/no-v-html -->
-        <div ref="previewContainer" class="markdown-preview" v-html="htmlPreview"></div>
+        <div
+          ref="previewContainer"
+          class="markdown-preview"
+          :style="previewStyle"
+          v-html="htmlPreview"
+        ></div>
       </div>
     </div>
   </div>

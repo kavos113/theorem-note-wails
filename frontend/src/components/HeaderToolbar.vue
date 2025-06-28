@@ -11,6 +11,7 @@ defineProps<Props>();
 defineEmits<{
   'open-folder': [];
   'change-view-mode': [mode: ViewMode];
+  'open-settings': [];
 }>();
 </script>
 
@@ -52,6 +53,10 @@ defineEmits<{
           プレビューのみ
         </button>
       </div>
+      <button class="toolbar-button" @click="$emit('open-settings')">
+        <span class="icon">⚙️</span>
+        設定
+      </button>
     </div>
   </div>
 </template>

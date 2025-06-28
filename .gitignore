@@ -4,3 +4,4 @@ frontend/dist
 .gemini
 GEMINI.md
 .eslintcache
+.idea

@@ -20,6 +20,10 @@ export const setProjectRoot = (root: string): void => {
   }
 };
 
+export const getProjectRoot = (): string => {
+  return projectRoot;
+};
+
 export const markdownToHtml = async (markdown: string): Promise<string> => {
   const parsed = await unified()
     .use(remarkParse)

@@ -9,6 +9,7 @@ export interface CodeMirrorInstance {
   updateContent: (content: string) => void;
   getContent: () => string;
   destroy: () => void;
+  setEditorStyle: (style: Record<string, string>) => void;
 }
 
 export const createCodeMirrorEditor = (
@@ -17,6 +18,24 @@ export const createCodeMirrorEditor = (
   onChange: (content: string) => void,
   isDarkTheme = false
 ): CodeMirrorInstance => {
+  const editorTheme = EditorView.theme({
+    '&': {
+      height: '100%',
+      fontSize: '14px',
+      fontFamily: '"Consolas", "Monaco", "Courier New", monospace'
+    },
+    '.cm-content': {
+      padding: '12px',
+      minHeight: '100%'
+    },
+    '.cm-editor': {
+      height: '100%'
+    },
+    '.cm-scroller': {
+      fontFamily: 'inherit'
+    }
+  });
+
   const extensions = [
     basicSetup,
     markdown(),
@@ -25,23 +44,7 @@ export const createCodeMirrorEditor = (
         onChange(update.state.doc.toString());
       }
     }),
-    EditorView.theme({
-      '&': {
-        height: '100%',
-        fontSize: '14px',
-        fontFamily: '"Consolas", "Monaco", "Courier New", monospace'
-      },
-      '.cm-content': {
-        padding: '12px',
-        minHeight: '100%'
-      },
-      '.cm-editor': {
-        height: '100%'
-      },
-      '.cm-scroller': {
-        fontFamily: 'inherit'
-      }
-    })
+    editorTheme
   ];
 
   if (isDarkTheme) {
@@ -73,6 +76,21 @@ export const createCodeMirrorEditor = (
       }
     },
     getContent: () => view.state.doc.toString(),
-    destroy: () => view.destroy()
+    destroy: () => view.destroy(),
+    setEditorStyle: (style: Record<string, string>) => {
+      // CodeMirrorのスタイルを動的に更新
+      // EditorView.themeは一度作成すると変更できないため、
+      // 直接DOMを操作するか、新しいテーマを適用する必要があります。
+      // ここでは簡易的にDOMを操作します。
+      const cmElement = view.dom;
+      if (cmElement) {
+        if (style.fontFamily) {
+          cmElement.style.fontFamily = style.fontFamily;
+        }
+        if (style.fontSize) {
+          cmElement.style.fontSize = style.fontSize;
+        }
+      }
+    }
   };
 };

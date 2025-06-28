@@ -33,12 +33,12 @@ watch(currentFile, (newFile) => {
 const handleFileSelect = async (filePath: string): Promise<void> => {
   if (tabBarRef.value) {
     await tabBarRef.value.openFileInTab(filePath);
-      
+
     const filePaths = tabBarRef.value.openFiles.map((file) => file.path);
     try {
-        await SaveSession(props.rootPath, filePaths);
+      await SaveSession(props.rootPath, filePaths);
     } catch (err) {
-        console.error('セッションの保存に失敗しました:', err);
+      console.error('セッションの保存に失敗しました:', err);
     }
   }
 };

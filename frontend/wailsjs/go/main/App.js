@@ -6,6 +6,10 @@ export function GetFileTree(arg1) {
   return window['go']['main']['App']['GetFileTree'](arg1);
 }
 
+export function GetFontSettings(arg1) {
+  return window['go']['main']['App']['GetFontSettings'](arg1);
+}
+
 export function GetLastOpened() {
   return window['go']['main']['App']['GetLastOpened']();
 }
@@ -24,6 +28,10 @@ export function LoadSession(arg1) {
 
 export function ReadFile(arg1) {
   return window['go']['main']['App']['ReadFile'](arg1);
+}
+
+export function SaveFontSettings(arg1, arg2) {
+  return window['go']['main']['App']['SaveFontSettings'](arg1, arg2);
 }
 
 export function SaveSession(arg1, arg2) {

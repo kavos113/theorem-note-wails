@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import HeaderToolbar from './components/HeaderToolbar.vue';
 import MainLayout from './components/MainLayout.vue';
+import SettingsModal from './components/SettingsModal.vue';
 import type { ViewMode } from './types/viewMode';
 import { setProjectRoot } from './utils/markdownUtils';
 
@@ -10,6 +11,7 @@ const rootPath = ref<string>('');
 const isLoading = ref(false);
 const viewMode = ref<ViewMode>('split');
 const hasActiveFile = ref(false);
+const isSettingsOpen = ref(false);
 
 // 表示モードを変更する
 const changeViewMode = (mode: ViewMode): void => {
@@ -42,6 +44,7 @@ const handleOpenFolder = (): void => {
       :view-mode="viewMode"
       @open-folder="handleOpenFolder"
       @change-view-mode="changeViewMode"
+      @open-settings="isSettingsOpen = true"
     />
 
     <!-- メインレイアウト -->
@@ -52,6 +55,9 @@ const handleOpenFolder = (): void => {
       @folder-changed="handleFolderChanged"
       @file-active-changed="handleFileActiveChanged"
     />
+
+    <!-- 設定モーダル -->
+    <SettingsModal :is-open="isSettingsOpen" :root-dir="rootPath" @close="isSettingsOpen = false" />
   </div>
 </template>
 
