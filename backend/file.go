@@ -3,6 +3,7 @@ package backend
 import (
 	"cmp"
 	"context"
+	"encoding/json"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"os"
 	"path/filepath"
@@ -79,4 +80,66 @@ func WriteFile(path string, content string) error {
 		return err
 	}
 	return nil
+}
+
+const sessionDirPath = ".theorem-note"
+const sessionFileName = "session.json"
+
+func getSessionFilePath(rootDir string) (string, error) {
+	if rootDir == "" {
+		return "", os.ErrInvalid
+	}
+	return filepath.Join(rootDir, sessionDirPath, sessionFileName), nil
+}
+
+func ensureSessionDirExists(rootDir string) error {
+	if rootDir == "" {
+		return os.ErrInvalid
+	}
+	return os.MkdirAll(filepath.Join(rootDir, sessionDirPath), 0755)
+}
+
+func SaveSession(rootDir string, filePaths []string) error {
+	if err := ensureSessionDirExists(rootDir); err != nil {
+		return err
+	}
+
+	path, err := getSessionFilePath(rootDir)
+	if err != nil {
+		return err
+	}
+
+	data, err := json.Marshal(filePaths)
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(path, data, 0644)
+}
+
+func LoadSession(rootDir string) ([]string, error) {
+	if rootDir == "" {
+		return []string{}, nil
+	}
+
+	path, err := getSessionFilePath(rootDir)
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return []string{}, nil
+	}
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	var filePaths []string
+	if err := json.Unmarshal(data, &filePaths); err != nil {
+		return nil, err
+	}
+
+	return filePaths, nil
 }

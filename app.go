@@ -59,3 +59,11 @@ func (a *App) GetLastOpened() string {
 func (a *App) SetLastOpened(path string) {
 	a.configManager.SetLastOpened(path)
 }
+
+func (a *App) SaveSession(rootDir string, filePaths []string) error {
+	return backend.SaveSession(rootDir, filePaths)
+}
+
+func (a *App) LoadSession(rootDir string) ([]string, error) {
+	return backend.LoadSession(rootDir)
+}

@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
 import FileExplorer from './FileExplorer.vue';
 import MarkdownEditor from './MarkdownEditor.vue';
 import TabBar, { type OpenFile } from './TabBar.vue';
 import type { ViewMode } from '../types/viewMode';
+import { LoadSession, SaveSession } from '../../wailsjs/go/main/App';
+import { EventsEmit, EventsOn } from '../../wailsjs/runtime';
 
 interface Props {
   rootPath: string;
@@ -11,7 +13,7 @@ interface Props {
   viewMode: ViewMode;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
 
 const emit = defineEmits<{
   'folder-changed': [path: string];
@@ -31,6 +33,13 @@ watch(currentFile, (newFile) => {
 const handleFileSelect = async (filePath: string): Promise<void> => {
   if (tabBarRef.value) {
     await tabBarRef.value.openFileInTab(filePath);
+      
+    const filePaths = tabBarRef.value.openFiles.map((file) => file.path);
+    try {
+        await SaveSession(props.rootPath, filePaths);
+    } catch (err) {
+        console.error('セッションの保存に失敗しました:', err);
+    }
   }
 };
 
@@ -70,6 +79,25 @@ const handleFileSaved = (): void => {
     tabBarRef.value.markFileAsSaved(currentFile.value.path);
   }
 };
+
+watch(
+  () => props.rootPath,
+  async (newPath) => {
+    if (newPath && tabBarRef.value) {
+      // 以前のセッションを読み込む
+      try {
+        const filePaths = await LoadSession(newPath);
+        if (filePaths && filePaths.length > 0 && tabBarRef.value) {
+          for (const path of filePaths) {
+            await tabBarRef.value.openFileInTab(path);
+          }
+        }
+      } catch (err) {
+        console.error('セッションの読み込みに失敗しました:', err);
+      }
+    }
+  }
+);
 </script>
 
 <template>
