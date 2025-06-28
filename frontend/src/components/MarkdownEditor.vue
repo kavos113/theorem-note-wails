@@ -29,8 +29,12 @@ const editorWidth = ref(50); // エディタの幅(%)
 const isResizing = ref(false);
 const editorContainer = ref<HTMLElement>();
 const codeMirrorInstance = ref<CodeMirrorInstance>();
+const previewContainer = ref<HTMLElement>();
 
 const htmlPreview = ref<string>('');
+
+// スクロール同期のためのフラグ
+const isSyncingScroll = ref(false);
 
 const saveFile = async (): Promise<void> => {
   if (!props.selectedFilePath || isSaving.value) return;
@@ -140,6 +144,7 @@ onMounted(async () => {
       handleCodeMirrorChange
     );
   }
+  setupScrollListeners();
 });
 
 onUnmounted(() => {
@@ -147,6 +152,72 @@ onUnmounted(() => {
 
   if (codeMirrorInstance.value) {
     codeMirrorInstance.value.destroy();
+  }
+  // スクロールイベントリスナーを削除
+  removeScrollListeners();
+});
+
+// スクロール同期ロジック
+let editorScroller: HTMLElement | null = null;
+
+const handleEditorScroll = () => {
+  if (isSyncingScroll.value || !editorScroller || !previewContainer.value) return;
+  isSyncingScroll.value = true;
+
+  const editorScrollRatio = editorScroller.scrollTop / (editorScroller.scrollHeight - editorScroller.clientHeight);
+  previewContainer.value.scrollTop = editorScrollRatio * (previewContainer.value.scrollHeight - previewContainer.value.clientHeight);
+
+  requestAnimationFrame(() => {
+    isSyncingScroll.value = false;
+  });
+};
+
+const handlePreviewScroll = () => {
+  if (isSyncingScroll.value || !editorScroller || !previewContainer.value) return;
+  isSyncingScroll.value = true;
+
+  const previewScrollRatio = previewContainer.value.scrollTop / (previewContainer.value.scrollHeight - previewContainer.value.clientHeight);
+  editorScroller.scrollTop = previewScrollRatio * (editorScroller.scrollHeight - editorScroller.clientHeight);
+
+  requestAnimationFrame(() => {
+    isSyncingScroll.value = false;
+  });
+};
+
+const setupScrollListeners = () => {
+  if (props.viewMode !== 'split') return;
+
+  nextTick(() => {
+    if (codeMirrorInstance.value && previewContainer.value) {
+      editorScroller = editorContainer.value?.querySelector('.cm-scroller') as HTMLElement;
+      if (editorScroller) {
+        editorScroller.addEventListener('scroll', handleEditorScroll);
+        previewContainer.value.addEventListener('scroll', handlePreviewScroll);
+      }
+    }
+  });
+};
+
+const removeScrollListeners = () => {
+  if (editorScroller) {
+    editorScroller.removeEventListener('scroll', handleEditorScroll);
+  }
+  if (previewContainer.value) {
+    previewContainer.value.removeEventListener('scroll', handlePreviewScroll);
+  }
+};
+
+watch(() => props.viewMode, (newMode) => {
+  removeScrollListeners();
+  if (newMode === 'split') {
+    setupScrollListeners();
+  }
+});
+
+watch(() => props.selectedFilePath, () => {
+  removeScrollListeners();
+  if (props.viewMode === 'split') {
+    setupScrollListeners();
   }
 });
 </script>
@@ -170,7 +241,7 @@ onUnmounted(() => {
       <div v-if="viewMode !== 'editor'" class="preview-pane" :style="{ width: getPreviewWidth() }">
         <div class="pane-header">プレビュー</div>
         <!-- eslint-disable-next-line vue/no-v-html -->
-        <div class="markdown-preview" v-html="htmlPreview"></div>
+        <div ref="previewContainer" class="markdown-preview" v-html="htmlPreview"></div>
       </div>
     </div>
   </div>
