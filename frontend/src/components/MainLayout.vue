@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
+import { ref, watch } from 'vue';
 import FileExplorer from './FileExplorer.vue';
 import MarkdownEditor from './MarkdownEditor.vue';
 import TabBar, { type OpenFile } from './TabBar.vue';
 import type { ViewMode } from '../types/viewMode';
 import { LoadSession, SaveSession } from '../../wailsjs/go/main/App';
-import { EventsEmit, EventsOn } from '../../wailsjs/runtime';
 
 interface Props {
   rootPath: string;
