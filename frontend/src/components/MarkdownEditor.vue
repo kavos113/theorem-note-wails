@@ -4,7 +4,7 @@ import { createCodeMirrorEditor, type CodeMirrorInstance } from '../utils/codeMi
 import type { ViewMode } from '../types/viewMode';
 import '../assets/styles/highlight.css';
 import '../assets//styles/katex.css';
-import { markdownToHtml, getProjectRoot } from '../utils/markdownUtils';
+import { markdownToHtml, getProjectRoot, renderMermaid } from '../utils/markdownUtils';
 import 'highlight.js/styles/github.css';
 import { WriteFile, GetFontSettings } from '../../wailsjs/go/main/App';
 import { EventsOn } from '../../wailsjs/runtime';
@@ -92,9 +92,14 @@ const handleCodeMirrorChange = (content: string): void => {
 watch(
   localContent,
   async (newContent) => {
-    if (!newContent) return;
+    if (newContent === null || newContent === undefined) {
+      htmlPreview.value = '';
+      return;
+    }
     try {
       htmlPreview.value = await markdownToHtml(newContent);
+      await nextTick();
+      renderMermaid();
     } catch (err) {
       console.error('マークダウン変換エラー:', err);
       htmlPreview.value = '<p>プレビューの生成中にエラーが発生しました</p>';
@@ -519,5 +524,13 @@ watch(
 
 .markdown-preview :deep(strong) {
   font-weight: bold;
+}
+
+.markdown-preview :deep(.mermaid) {
+  background-color: var(--bg-color);
+  padding: 1em;
+  border-radius: 5px;
+  margin: 1em 0;
+  text-align: center;
 }
 </style>

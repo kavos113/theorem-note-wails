@@ -16,9 +16,11 @@
     "@codemirror/state": "^6.5.2",
     "@codemirror/theme-one-dark": "^6.1.2",
     "@codemirror/view": "^6.36.8",
+    "@types/hast": "^3.0.4",
     "codemirror": "^6.0.1",
     "highlight.js": "^11.11.1",
     "katex": "^0.16.22",
+    "mermaid": "^11.7.0",
     "rehype-highlight": "^7.0.2",
     "rehype-katex": "^7.0.1",
     "rehype-stringify": "^10.0.1",
@@ -28,6 +30,7 @@
     "remark-parse": "^11.0.0",
     "remark-rehype": "^11.1.2",
     "unified": "^11.0.5",
+    "unist-util-visit": "^5.0.0",
     "vue": "^3.2.37"
   },
   "devDependencies": {
