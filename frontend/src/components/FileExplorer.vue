@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
 import FileTreeItem from './FileTreeItem.vue';
-import { GetFileTree, GetLastOpened, GetNewDirectoryFileTree } from '../../wailsjs/go/main/App';
+import {
+  GetFileTree,
+  GetLastOpened,
+  GetNewDirectoryFileTree,
+  CreateFile,
+  CreateDirectory
+} from '../../wailsjs/go/main/App';
 import { backend } from '../../wailsjs/go/models';
 import FileItem = backend.FileItem;
 
@@ -20,18 +26,16 @@ const rootPath = ref<string>(props.rootPath || '');
 const fileTree = ref<FileItem[]>([]);
 const loading = ref<boolean>(false);
 const error = ref<string | null>(null);
+const selectedItem = ref<string | null>(null);
 
 // フォルダを開く
 const openFolder = async (): Promise<void> => {
   try {
-    const fileTreeResult = await GetNewDirectoryFileTree();
-    console.dir(fileTreeResult, { depth: null });
-    if (fileTreeResult && fileTreeResult.length > 0) {
-      // 最初のアイテムのパスからルートパスを抽出
-      const firstPath = fileTreeResult[0].Path;
-      const newRootPath = firstPath.split('\\').slice(0, -1).join('\\');
+    const result = await GetNewDirectoryFileTree();
+    const newRootPath = await GetLastOpened();
+    if (result && newRootPath) {
       rootPath.value = newRootPath;
-      fileTree.value = fileTreeResult;
+      fileTree.value = result;
       emit('folder-changed', newRootPath);
     }
   } catch (err) {
@@ -46,17 +50,13 @@ const loadLastDirectory = async (): Promise<void> => {
     loading.value = true;
     const lastDirectory = await GetLastOpened();
     if (lastDirectory) {
-      // 前回のディレクトリのファイルツリーを取得
       const fileTreeResult = await GetFileTree(lastDirectory);
-      if (fileTreeResult && fileTreeResult.length > 0) {
-        rootPath.value = lastDirectory;
-        fileTree.value = fileTreeResult;
-        emit('folder-changed', lastDirectory);
-      }
+      rootPath.value = lastDirectory;
+      fileTree.value = fileTreeResult;
+      emit('folder-changed', lastDirectory);
     }
   } catch (err) {
     console.log('前回のディレクトリの読み込みに失敗:', err);
-    // エラーが発生した場合は何もしない（手動でフォルダを開く必要がある）
   } finally {
     loading.value = false;
   }
@@ -64,10 +64,10 @@ const loadLastDirectory = async (): Promise<void> => {
 
 // ファイルツリーを読み込む
 const loadFileTree = async (): Promise<void> => {
+  if (!rootPath.value) return;
   try {
     loading.value = true;
     error.value = null;
-    // ファイル一覧をElectronのメインプロセスから取得
     const result = await GetFileTree(rootPath.value);
     fileTree.value = result;
   } catch (err) {
@@ -75,6 +75,49 @@ const loadFileTree = async (): Promise<void> => {
     fileTree.value = [];
   } finally {
     loading.value = false;
+  }
+};
+
+const getBasePath = (): string => {
+  if (!selectedItem.value) {
+    return rootPath.value;
+  }
+  // TODO: 現状、選択アイテムがファイルかフォルダかをフロントで判定できない。
+  // そのため、選択アイテムがファイルの場合、その親ディレクトリを返すような処理ができない。
+  // Go側でIsDirectoryを返すようにしているので、FileItemのツリーから探すことは可能だが複雑になる。
+  // ここでは簡略化のため、選択アイテムのパスをそのままベースパスとする。
+  // ユーザーがファイルを選択して「新規作成」すると、そのファイルと同じ階層に作成されることになる。
+  return selectedItem.value;
+};
+
+const createFile = async () => {
+  const fileName = prompt('新しいファイル名を入力してください');
+  if (!fileName) return;
+
+  const basePath = getBasePath();
+  // Note: path.joinが使えないので手動で結合
+  const newFilePath = basePath + '\\' + fileName;
+
+  try {
+    await CreateFile(newFilePath);
+    await loadFileTree();
+  } catch (err) {
+    alert(`ファイル作成エラー: ${err}`);
+  }
+};
+
+const createDirectory = async () => {
+  const dirName = prompt('新しいフォルダ名を入力してください');
+  if (!dirName) return;
+
+  const basePath = getBasePath();
+  const newDirPath = basePath + '\\' + dirName;
+
+  try {
+    await CreateDirectory(newDirPath);
+    await loadFileTree();
+  } catch (err) {
+    alert(`フォルダ作成エラー: ${err}`);
   }
 };
 
@@ -86,11 +129,11 @@ onMounted(() => {
   }
 });
 
-// rootPathが変更された時にファイルツリーを更新
 watch(
   () => props.rootPath,
   (newRootPath) => {
     rootPath.value = newRootPath || '';
+    selectedItem.value = null; // ルートが変わったら選択を解除
     if (newRootPath) {
       loadFileTree();
     } else {
@@ -105,7 +148,11 @@ watch(
   <div class="file-explorer">
     <div class="explorer-header">
       <h3>エクスプローラー</h3>
-      <button class="folder-button" title="フォルダを開く" @click="openFolder">📁</button>
+      <div>
+        <button class="action-button" title="新しいファイル" @click="createFile">📄+</button>
+        <button class="action-button" title="新しいフォルダ" @click="createDirectory">📁+</button>
+        <button class="folder-button" title="フォルダを開く" @click="openFolder">📁</button>
+      </div>
     </div>
     <div class="file-tree">
       <div v-if="loading" class="loading">読み込み中...</div>
@@ -120,8 +167,9 @@ watch(
             v-for="item in fileTree"
             :key="item.Path"
             :item="item"
-            :selected-file="selectedFile"
+            :selected-item="selectedItem"
             @select-file="$emit('select-file', $event)"
+            @select-item="selectedItem = $event"
           />
         </ul>
       </div>
@@ -157,6 +205,7 @@ watch(
   font-weight: inherit;
 }
 
+.action-button,
 .folder-button {
   background: none;
   border: none;
@@ -165,8 +214,10 @@ watch(
   padding: 4px;
   border-radius: 3px;
   transition: background-color 0.2s;
+  margin-left: 4px;
 }
 
+.action-button:hover,
 .folder-button:hover {
   background-color: var(--hover-bg, #eaeaea);
 }

@@ -5,20 +5,22 @@ import FileItem = backend.FileItem;
 
 const props = defineProps<{
   item: FileItem;
-  selectedFile?: string;
+  selectedItem?: string | null;
 }>();
 
 const emit = defineEmits<{
   (e: 'select-file', path: string): void;
+  (e: 'select-item', path: string): void;
 }>();
 
 const isExpanded = ref(false);
 
 const isSelected = computed(() => {
-  return props.selectedFile === props.item.Path;
+  return props.selectedItem === props.item.Path;
 });
 
 const handleClick = (): void => {
+  emit('select-item', props.item.Path);
   if (props.item.IsDirectory) {
     isExpanded.value = !isExpanded.value;
   } else {
@@ -50,8 +52,9 @@ const handleClick = (): void => {
         v-for="child in item.Children"
         :key="child.Path"
         :item="child"
-        :selected-file="selectedFile"
+        :selected-item="selectedItem"
         @select-file="$emit('select-file', $event)"
+        @select-item="$emit('select-item', $event)"
       />
     </ul>
   </li>
