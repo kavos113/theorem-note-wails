@@ -82,6 +82,20 @@ func WriteFile(path string, content string) error {
 	return nil
 }
 
+func CreateFile(path string) error {
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		return os.ErrExist
+	}
+	return os.WriteFile(path, []byte(""), 0644)
+}
+
+func CreateDirectory(path string) error {
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		return os.ErrExist
+	}
+	return os.Mkdir(path, 0755)
+}
+
 const sessionDirPath = ".theorem-note"
 const sessionFileName = "session.json"
 

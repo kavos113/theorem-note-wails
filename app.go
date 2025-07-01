@@ -53,6 +53,14 @@ func (a *App) WriteFile(path string, content string) error {
 	return backend.WriteFile(path, content)
 }
 
+func (a *App) CreateFile(path string) error {
+	return backend.CreateFile(path)
+}
+
+func (a *App) CreateDirectory(path string) error {
+	return backend.CreateDirectory(path)
+}
+
 // GetLastOpened はグローバル設定から最後に開いたパスを取得します
 func (a *App) GetLastOpened() string {
 	return a.configManager.GetLastOpened()

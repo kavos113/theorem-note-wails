@@ -270,3 +270,58 @@ func TestJsonMarshalFileItem(t *testing.T) {
 		t.Errorf("Unmarshaled FileItem does not match original.\nGot:  %v\nWant: %v", newFileItem, fileItem)
 	}
 }
+
+func TestCreateFile(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "testdir")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	filePath := filepath.Join(tmpDir, "testfile.txt")
+
+	// Test creating a new file
+	err = CreateFile(filePath)
+	if err != nil {
+		t.Fatalf("CreateFile failed: %v", err)
+	}
+
+	// Verify that the file was created
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		t.Fatalf("File was not created")
+	}
+
+	// Test creating a file that already exists
+	err = CreateFile(filePath)
+	if err == nil {
+		t.Fatalf("Expected an error when creating a file that already exists, but got nil")
+	}
+}
+
+func TestCreateDirectory(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "testdir")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	dirPath := filepath.Join(tmpDir, "testdir")
+
+	// Test creating a new directory
+	err = CreateDirectory(dirPath)
+	if err != nil {
+		t.Fatalf("CreateDirectory failed: %v", err)
+	}
+
+	// Verify that the directory was created
+	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
+		t.Fatalf("Directory was not created")
+	}
+
+	// Test creating a directory that already exists
+	err = CreateDirectory(dirPath)
+	if err == nil {
+		t.Fatalf("Expected an error when creating a directory that already exists, but got nil")
+	}
+}
+
