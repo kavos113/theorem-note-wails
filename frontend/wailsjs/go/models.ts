@@ -4,7 +4,6 @@ export namespace backend {
 	    Name: string;
 	    Path: string;
 	    IsDirectory: boolean;
-	    IsExpand: boolean;
 	    Children: FileItem[];
 	
 	    static createFrom(source: any = {}) {
@@ -16,7 +15,6 @@ export namespace backend {
 	        this.Name = source["Name"];
 	        this.Path = source["Path"];
 	        this.IsDirectory = source["IsDirectory"];
-	        this.IsExpand = source["IsExpand"];
 	        this.Children = this.convertValues(source["Children"], FileItem);
 	    }
 	
