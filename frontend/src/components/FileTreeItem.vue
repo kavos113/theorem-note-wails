@@ -39,6 +39,7 @@ const handleClick = (): void => {
       <span v-if="item.IsDirectory" class="folder-arrow" :class="{ expanded: isExpanded }">
         &gt;
       </span>
+      <span v-else class="folder-arrow"></span>
       <span class="icon">
         <span v-if="item.IsDirectory" class="folder-icon">
           {{ isExpanded ? '📂' : '📁' }}
@@ -70,7 +71,7 @@ const handleClick = (): void => {
 .item-content {
   display: flex;
   align-items: center;
-  padding: 3px 8px;
+  padding: 0 8px;
   cursor: pointer;
   border-radius: 3px;
 }
