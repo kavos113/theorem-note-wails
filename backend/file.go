@@ -10,10 +10,16 @@ import (
 	"slices"
 )
 
+const (
+	sessionDirPath  = ".theorem-note"
+	sessionFileName = "session.json"
+)
+
 type FileItem struct {
 	Name        string
 	Path        string
 	IsDirectory bool
+	IsExpand    bool
 	Children    []FileItem
 }
 
@@ -43,6 +49,7 @@ func GetFileTree(path string) ([]FileItem, error) {
 			Name:        fi.Name(),
 			Path:        filepath.Join(path, fi.Name()),
 			IsDirectory: fi.IsDir(),
+			IsExpand:    false,
 		}
 		if fi.IsDir() {
 			children, err := GetFileTree(item.Path)
@@ -95,9 +102,6 @@ func CreateDirectory(path string) error {
 	}
 	return os.Mkdir(path, 0755)
 }
-
-const sessionDirPath = ".theorem-note"
-const sessionFileName = "session.json"
 
 func getSessionFilePath(rootDir string) (string, error) {
 	if rootDir == "" {
