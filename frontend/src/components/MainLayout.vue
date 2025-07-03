@@ -41,7 +41,7 @@ const handleFileSelect = async (filePath: string, header?: string): Promise<void
       }, 100); // DOMの更新を待つ
     }
 
-    const filePaths = tabBarRef.value.openFiles.map((file) => file.path);
+    const filePaths = tabBarRef.value.openFiles.map((file: OpenFile) => file.path);
     try {
       await SaveSession(props.rootPath, filePaths);
     } catch (err) {

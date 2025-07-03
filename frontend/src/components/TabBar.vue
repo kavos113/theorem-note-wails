@@ -37,7 +37,8 @@ const activeFile = computed((): OpenFile | undefined => {
 
 // ファイル名からタブ表示用の名前を取得
 const getDisplayName = (filePath: string): string => {
-  return filePath.split('\\').pop() || filePath.split('/').pop() || filePath;
+  const fileName = filePath.includes('\\') ? filePath.split('\\').pop() : filePath.split('/').pop();
+  return fileName ? fileName : filePath;
 };
 
 // 新しいタブでファイルを開く
