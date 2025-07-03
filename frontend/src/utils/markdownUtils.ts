@@ -162,6 +162,7 @@ const rehypeCardLink = () => {
           if (textNode?.type === 'text') {
             const code = textNode.value;
             const lines = code.split('\n');
+            // @ts-ignore
             const data: any = {};
             for (const line of lines) {
               const [key, ...rest] = line.split(':');
