@@ -533,4 +533,87 @@ watch(
   margin: 1em 0;
   text-align: center;
 }
+
+.markdown-preview :deep(.card-link-container) {
+  width: 100%;
+}
+
+.markdown-preview :deep(.card-link) {
+  display: flex;
+  background-color: #ffffff;
+  border: 1px solid #b1b8bd;
+  border-radius: 8px;
+  overflow: hidden;
+  text-decoration: none;
+  color: #14171a;
+  transition:
+    transform 0.2s ease-in-out,
+    box-shadow 0.2s ease-in-out;
+}
+
+.markdown-preview :deep(.card-link:hover) {
+  background-color: #f0f0f0;
+}
+
+.markdown-preview :deep(.card-content) {
+  flex: 1;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0; /* Flexboxでのテキストオーバーフロー問題を防止 */
+}
+
+.markdown-preview :deep(.card-title) {
+  font-weight: 600;
+  margin: 0 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.markdown-preview :deep(.card-description) {
+  color: #657786;
+  margin: 0 0 12px;
+  flex-grow: 1;
+  /* 説明文を2行に制限して、...で省略 */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+
+.markdown-preview :deep(.card-footer) {
+  display: flex;
+  align-items: center;
+  color: #657786;
+}
+
+.markdown-preview :deep(.card-favicon) {
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.markdown-preview :deep(.card-url) {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.markdown-preview :deep(.card-thumbnail) {
+  width: 130px;
+  flex-shrink: 0;
+  background-color: #f5f8fa;
+}
+
+.markdown-preview :deep(.card-thumbnail) img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-left: 1px solid #e1e8ed;
+}
 </style>

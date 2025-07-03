@@ -9,7 +9,7 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import { visit } from 'unist-util-visit';
 import mermaid from 'mermaid';
-import type { Root, Element } from 'hast';
+import type { Element, Root } from 'hast';
 
 let projectRoot = '';
 
@@ -54,6 +54,129 @@ const rehypeMermaid = () => {
   };
 };
 
+interface CardLinkData {
+  url: string;
+  title: string;
+  description?: string;
+  host: string;
+  favicon?: string;
+  image?: string;
+}
+
+const makeCardLinkElement = (data: CardLinkData): Element => {
+  const children: Element[] = [
+    {
+      type: 'element',
+      tagName: 'div',
+      properties: { className: ['card-content'] },
+      children: [
+        {
+          type: 'element',
+          tagName: 'p',
+          properties: { className: ['card-title'] },
+          children: [{ type: 'text', value: data.title }]
+        },
+        {
+          type: 'element',
+          tagName: 'p',
+          properties: { className: ['card-description'] },
+          children: [{ type: 'text', value: data.description || '' }]
+        },
+        {
+          type: 'element',
+          tagName: 'div',
+          properties: { className: ['card-footer'] },
+          children: [
+            {
+              type: 'element',
+              tagName: 'img',
+              properties: {
+                src: data.favicon,
+                alt: 'site favicon',
+                className: ['card-favicon']
+              },
+              children: []
+            },
+            {
+              type: 'element',
+              tagName: 'span',
+              properties: { className: ['card-url'] },
+              children: [{ type: 'text', value: data.host }]
+            }
+          ]
+        }
+      ]
+    }
+  ];
+
+  if (data.image) {
+    children.push({
+      type: 'element',
+      tagName: 'div',
+      properties: { className: ['card-thumbnail'] },
+      children: [
+        {
+          type: 'element',
+          tagName: 'img',
+          properties: {
+            src: data.image,
+            alt: data.title + ' Logo'
+          },
+          children: []
+        }
+      ]
+    });
+  }
+
+  return {
+    type: 'element',
+    tagName: 'div',
+    properties: { className: ['card-link-container'] },
+    children: [
+      {
+        type: 'element',
+        tagName: 'a',
+        properties: {
+          href: data.url,
+          className: ['card-link'],
+          target: '_blank',
+          rel: 'noopener noreferrer'
+        },
+        children: children
+      }
+    ]
+  };
+};
+
+const rehypeCardLink = () => {
+  return (tree: Root) => {
+    visit(tree, 'element', (node: Element, index?: number, parent?: Root | Element) => {
+      if (node.tagName === 'pre' && parent?.children && index !== undefined) {
+        const codeNode = node.children[0];
+        if (
+          codeNode?.type === 'element' &&
+          codeNode.tagName === 'code' &&
+          (codeNode.properties?.className as string[])?.includes('language-cardlink')
+        ) {
+          const textNode = codeNode.children[0];
+          if (textNode?.type === 'text') {
+            const code = textNode.value;
+            const lines = code.split('\n');
+            const data: any = {};
+            for (const line of lines) {
+              const [key, ...rest] = line.split(':');
+              if (!key || rest.length === 0) continue;
+              data[key.trim()] = rest.join(':').trim().replace(/^"|"$/g, '');
+            }
+
+            parent.children.splice(index, 1, makeCardLinkElement(data));
+          }
+        }
+      }
+    });
+  };
+};
+
 export const markdownToHtml = async (markdown: string): Promise<string> => {
   const parsed = await unified()
     .use(remarkParse)
@@ -64,6 +187,7 @@ export const markdownToHtml = async (markdown: string): Promise<string> => {
     .use(rehypeKatex)
     .use(rehypeHighlight)
     .use(rehypeMermaid)
+    .use(rehypeCardLink)
     .use(rehypeStringify)
     .process(convertObsidianLinks(markdown));
 
