@@ -21,9 +21,29 @@ const props = defineProps<Props>();
 interface Emits {
   (e: 'update:fileContent', value: string): void;
   (e: 'file-saved'): void;
+  (e: 'select-file', path: string, header?: string): void;
 }
 
 const emit = defineEmits<Emits>();
+
+const handleInternalLinkClick = (event: MouseEvent) => {
+  const target = event.target as HTMLElement;
+  const link = target.closest('a[data-internal-link="true"]');
+
+  if (link) {
+    event.preventDefault();
+    const path = link.getAttribute('data-path');
+    const header = link.getAttribute('data-header');
+
+    if (path) {
+      let absolutePath = getProjectRoot() + '/' + path;
+      if (!absolutePath.endsWith('.md')) {
+        absolutePath += '.md';
+      }
+      emit('select-file', absolutePath, header ? header : undefined);
+    }
+  }
+};
 
 const localContent = ref(props.fileContent);
 const isSaving = ref(false);
@@ -170,6 +190,8 @@ onMounted(async () => {
   cleanupFontListener = EventsOn('font-settings-updated', (settings: backend.FontSettings) => {
     applyFontSettings(settings);
   });
+
+  setupLinkListener();
 });
 
 onUnmounted(() => {
@@ -184,6 +206,7 @@ onUnmounted(() => {
   if (cleanupFontListener) {
     cleanupFontListener();
   }
+  removeLinkListener();
 });
 
 // --- フォント設定 ---
@@ -193,6 +216,18 @@ const applyFontSettings = (settings: backend.FontSettings) => {
   fontSettings.value = settings;
   if (codeMirrorInstance.value) {
     codeMirrorInstance.value.setEditorStyle(editorStyle.value);
+  }
+};
+
+const setupLinkListener = () => {
+  if (previewContainer.value) {
+    previewContainer.value.addEventListener('click', handleInternalLinkClick);
+  }
+};
+
+const removeLinkListener = () => {
+  if (previewContainer.value) {
+    previewContainer.value.removeEventListener('click', handleInternalLinkClick);
   }
 };
 
@@ -281,6 +316,28 @@ watch(
     }
   }
 );
+
+const scrollToHeader = (header: string) => {
+  if (!previewContainer.value) return;
+
+  const headerId = header
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-');
+
+  const headerElement = previewContainer.value.querySelector(`#${headerId}`);
+
+  if (headerElement) {
+    headerElement.scrollIntoView({ behavior: 'smooth' });
+  } else {
+    console.warn(`Header with id #${headerId} not found.`);
+  }
+};
+
+defineExpose({
+  scrollToHeader
+});
 </script>
 
 <template>

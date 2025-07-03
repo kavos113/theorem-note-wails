@@ -20,6 +20,7 @@ const emit = defineEmits<{
 }>();
 
 const tabBarRef = ref<InstanceType<typeof TabBar> | null>(null);
+const markdownEditorRef = ref<InstanceType<typeof MarkdownEditor> | null>(null);
 const currentFile = ref<OpenFile | null>(null);
 const selectedFilePath = ref<string | undefined>(undefined);
 
@@ -29,9 +30,16 @@ watch(currentFile, (newFile) => {
 });
 
 // ファイル選択時の処理
-const handleFileSelect = async (filePath: string): Promise<void> => {
+const handleFileSelect = async (filePath: string, header?: string): Promise<void> => {
   if (tabBarRef.value) {
     await tabBarRef.value.openFileInTab(filePath);
+
+    if (header && markdownEditorRef.value) {
+      // 少し待ってからスクロールを実行
+      setTimeout(() => {
+        markdownEditorRef.value?.scrollToHeader(header);
+      }, 100); // DOMの更新を待つ
+    }
 
     const filePaths = tabBarRef.value.openFiles.map((file) => file.path);
     try {
@@ -132,11 +140,13 @@ watch(
       </div>
       <div v-else class="editor-container">
         <MarkdownEditor
+          ref="markdownEditorRef"
           :selected-file-path="currentFile.path"
           :file-content="currentFile.content"
           :view-mode="viewMode"
           @update:file-content="handleContentUpdate"
           @file-saved="handleFileSaved"
+          @select-file="handleFileSelect"
         />
       </div>
     </div>
