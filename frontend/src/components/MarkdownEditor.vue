@@ -21,6 +21,7 @@ const props = defineProps<Props>();
 interface Emits {
   (e: 'update:fileContent', value: string): void;
   (e: 'file-saved'): void;
+  (e: 'select-file', path: string, header?: string): void;
 }
 
 const emit = defineEmits<Emits>();
@@ -35,8 +36,11 @@ const handleInternalLinkClick = (event: MouseEvent) => {
     const header = link.getAttribute('data-header');
 
     if (path) {
-      // @ts-expect-error header is not defined in the event type
-      emit('select-file', path, header);
+      let absolutePath = getProjectRoot() + '/' + path;
+      if (!absolutePath.endsWith('.md')) {
+        absolutePath += '.md';
+      }
+      emit('select-file', absolutePath, header ? header : undefined);
     }
   }
 };
@@ -214,7 +218,6 @@ const applyFontSettings = (settings: backend.FontSettings) => {
     codeMirrorInstance.value.setEditorStyle(editorStyle.value);
   }
 };
-
 
 const setupLinkListener = () => {
   if (previewContainer.value) {

@@ -11,6 +11,7 @@ import rehypeSlug from 'rehype-slug';
 import { visit } from 'unist-util-visit';
 import mermaid from 'mermaid';
 import type { Element, Root } from 'hast';
+import type { Text, Root as RemarkRoot } from 'mdast';
 
 let projectRoot = '';
 
@@ -179,24 +180,58 @@ const rehypeCardLink = () => {
   };
 };
 
-function convertInternalLinks(markdown: string): string {
-  // [[path/to/file|header]] or [[path/to/file]]
-  const regex = /\[\[(.*?)]]/g;
-  return markdown.replace(regex, (_, content: string) => {
-    const [path, header] = content.split('|');
-    const text = header ? `${path}#${header}` : path;
-    const dataAttrs = `data-internal-link="true" data-path="${path}" ${
-      header ? `data-header="${header}"` : ''
-    }`;
-    return `<a href="#" ${dataAttrs}>${text}</a>`;
-  });
-}
+const remarkInternalLinks = () => {
+  return (tree: RemarkRoot) => {
+    visit(tree, 'text', (node: Text, index, parent) => {
+      const regex = /\[\[(.*?)]]/g;
+      let match;
+      let lastIndex = 0;
+      const newNodes: any[] = [];
+      const value = node.value;
+
+      while ((match = regex.exec(value)) !== null) {
+        if (match.index > lastIndex) {
+          newNodes.push({
+            type: 'text',
+            value: value.slice(lastIndex, match.index)
+          });
+        }
+        const [path, header] = match[1].split('|');
+        const text = header ? `${path}#${header}` : path;
+        newNodes.push({
+          type: 'link',
+          url: '#',
+          data: {
+            hProperties: {
+              'data-internal-link': 'true',
+              'data-path': path,
+              ...(header ? { 'data-header': header } : {})
+            }
+          },
+          children: [{ type: 'text', value: text }]
+        });
+        lastIndex = match.index + match[0].length;
+      }
+      if (lastIndex < value.length) {
+        newNodes.push({
+          type: 'text',
+          value: value.slice(lastIndex)
+        });
+      }
+      if (newNodes.length > 0 && parent && typeof index === 'number') {
+        parent.children.splice(index, 1, ...newNodes);
+        return index + newNodes.length;
+      }
+    });
+  };
+};
 
 export const markdownToHtml = async (markdown: string): Promise<string> => {
   const parsed = await unified()
     .use(remarkParse)
     .use(remarkBreaks)
     .use(remarkGfm)
+    .use(remarkInternalLinks)
     .use(remarkMath)
     .use(remarkRehype, { allowDangerousHtml: true })
     .use(rehypeSlug)
@@ -205,7 +240,7 @@ export const markdownToHtml = async (markdown: string): Promise<string> => {
     .use(rehypeMermaid)
     .use(rehypeCardLink)
     .use(rehypeStringify)
-    .process(convertInternalLinks(convertObsidianLinks(markdown)));
+    .process(convertObsidianLinks(markdown));
 
   return parsed.toString();
 };
