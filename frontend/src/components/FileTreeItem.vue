@@ -9,7 +9,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'select-file', path: string): void;
+  (e: 'select-file', path: string, header?: string): void;
   (e: 'select-item', path: string): void;
 }>();
 
@@ -24,7 +24,7 @@ const handleClick = (): void => {
   if (props.item.IsDirectory) {
     isExpanded.value = !isExpanded.value;
   } else {
-    emit('select-file', props.item.Path);
+    emit('select-file', props.item.Path, undefined);
   }
 };
 </script>

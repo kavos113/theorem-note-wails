@@ -7,6 +7,7 @@ import remarkBreaks from 'remark-breaks';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
+import rehypeSlug from 'rehype-slug';
 import { visit } from 'unist-util-visit';
 import mermaid from 'mermaid';
 import type { Element, Root } from 'hast';
@@ -162,21 +163,34 @@ const rehypeCardLink = () => {
           if (textNode?.type === 'text') {
             const code = textNode.value;
             const lines = code.split('\n');
-            // @ts-ignore
-            const data: any = {};
+            const data: Partial<CardLinkData> = {};
             for (const line of lines) {
               const [key, ...rest] = line.split(':');
               if (!key || rest.length === 0) continue;
-              data[key.trim()] = rest.join(':').trim().replace(/^"|"$/g, '');
+              const trimmedKey = key.trim() as keyof CardLinkData;
+              data[trimmedKey] = rest.join(':').trim().replace(/^"|"$/g, '');
             }
 
-            parent.children.splice(index, 1, makeCardLinkElement(data));
+            parent.children.splice(index, 1, makeCardLinkElement(data as CardLinkData));
           }
         }
       }
     });
   };
 };
+
+function convertInternalLinks(markdown: string): string {
+  // [[path/to/file|header]] or [[path/to/file]]
+  const regex = /\[\[(.*?)]]/g;
+  return markdown.replace(regex, (_, content: string) => {
+    const [path, header] = content.split('|');
+    const text = header ? `${path}#${header}` : path;
+    const dataAttrs = `data-internal-link="true" data-path="${path}" ${
+      header ? `data-header="${header}"` : ''
+    }`;
+    return `<a href="#" ${dataAttrs}>${text}</a>`;
+  });
+}
 
 export const markdownToHtml = async (markdown: string): Promise<string> => {
   const parsed = await unified()
@@ -185,22 +199,22 @@ export const markdownToHtml = async (markdown: string): Promise<string> => {
     .use(remarkGfm)
     .use(remarkMath)
     .use(remarkRehype, { allowDangerousHtml: true })
+    .use(rehypeSlug)
     .use(rehypeKatex)
     .use(rehypeHighlight)
     .use(rehypeMermaid)
     .use(rehypeCardLink)
     .use(rehypeStringify)
-    .process(convertObsidianLinks(markdown));
+    .process(convertInternalLinks(convertObsidianLinks(markdown)));
 
   return parsed.toString();
 };
 
 function convertObsidianLinks(markdown: string): string {
-  console.log(projectRoot);
   const regex = /!\[\[(.*?)]]/g;
   return markdown.replace(regex, (_, filename) => {
     const encoded = encodeURIComponent(filename);
-    return `![${filename}](${projectRoot}${IMAGE_PREFIX}${encoded})`;
+    return `![${filename}](file:///${projectRoot}${IMAGE_PREFIX}${encoded})`;
   });
 }
 

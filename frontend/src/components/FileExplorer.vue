@@ -17,7 +17,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  'select-file': [path: string];
+  'select-file': [path: string, header?: string];
   'folder-changed': [path: string];
 }>();
 
