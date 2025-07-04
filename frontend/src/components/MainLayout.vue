@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, onMounted, onUnmounted } from 'vue';
 import FileExplorer from './FileExplorer.vue';
 import MarkdownEditor from './MarkdownEditor.vue';
 import TabBar, { type OpenFile } from './TabBar.vue';
@@ -23,6 +23,29 @@ const tabBarRef = ref<InstanceType<typeof TabBar> | null>(null);
 const markdownEditorRef = ref<InstanceType<typeof MarkdownEditor> | null>(null);
 const currentFile = ref<OpenFile | null>(null);
 const selectedFilePath = ref<string | undefined>(undefined);
+
+const fileExplorerRef = ref<InstanceType<typeof FileExplorer> | null>(null);
+
+const handleKeyDown = (event: KeyboardEvent) => {
+  if (event.ctrlKey && event.key === 'n') {
+    event.preventDefault();
+    if (event.shiftKey) {
+      // Ctrl + Shift + N for new folder
+      fileExplorerRef.value?.createDirectory();
+    } else {
+      // Ctrl + N for new file
+      fileExplorerRef.value?.createFile();
+    }
+  }
+};
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeyDown);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyDown);
+});
 
 // アクティブファイルの変更を監視してイベントを発行
 watch(currentFile, (newFile) => {
@@ -112,6 +135,7 @@ watch(
     <!-- サイドバー（ファイルエクスプローラー） -->
     <div class="sidebar">
       <FileExplorer
+        ref="fileExplorerRef"
         :root-path="rootPath"
         :selected-file="selectedFilePath"
         @select-file="handleFileSelect"

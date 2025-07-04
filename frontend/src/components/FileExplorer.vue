@@ -91,8 +91,12 @@ const getBasePath = (): string => {
 };
 
 const createFile = async () => {
-  const fileName = prompt('新しいファイル名を入力してください');
+  let fileName = prompt('新しいファイル名を入力してください');
   if (!fileName) return;
+
+  if (!fileName.endsWith('.md')) {
+    fileName += '.md';
+  }
 
   const basePath = getBasePath();
   // Note: path.joinが使えないので手動で結合
@@ -120,6 +124,11 @@ const createDirectory = async () => {
     alert(`フォルダ作成エラー: ${err}`);
   }
 };
+
+defineExpose({
+  createFile,
+  createDirectory
+});
 
 onMounted(() => {
   if (props.rootPath) {
