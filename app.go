@@ -81,6 +81,10 @@ func (a *App) LoadSession(rootDir string) ([]string, error) {
 	return backend.LoadSession(rootDir)
 }
 
+func (a *App) LoadTheorems(rootDir string) (map[string]string, error) {
+	return backend.LoadTheorems(rootDir)
+}
+
 // --- Project Settings ---
 
 func (a *App) GetFontSettings(rootDir string) (backend.FontSettings, error) {

@@ -4,7 +4,6 @@ import (
 	"cmp"
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"os"
 	"path/filepath"
@@ -219,4 +218,31 @@ func LoadSession(rootDir string) ([]string, error) {
 	}
 
 	return filePaths, nil
+}
+
+func LoadTheorems(rootDir string) (map[string]string, error) {
+	if rootDir == "" {
+		return make(map[string]string), nil
+	}
+
+	path, err := getTheoremsFilePath(rootDir)
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return make(map[string]string), nil
+	}
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	var theorems map[string]string
+	if err := json.Unmarshal(data, &theorems); err != nil {
+		return nil, err
+	}
+
+	return theorems, nil
 }

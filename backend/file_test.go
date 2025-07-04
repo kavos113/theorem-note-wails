@@ -258,7 +258,7 @@ func TestWriteFile_WithTheoremTag(t *testing.T) {
 	content := "This is a test file with a theorem.\n<theorem name=\"Test Theorem\">Some theorem content.</theorem>"
 
 	// Call WriteFile
-	err = WriteFile(filePath, content, "")
+	err = WriteFile(filePath, content, tmpDir)
 	if err != nil {
 		t.Fatalf("WriteFile failed: %v", err)
 	}
@@ -287,6 +287,64 @@ func TestWriteFile_WithTheoremTag(t *testing.T) {
 
 	if !reflect.DeepEqual(theorems, expectedTheorems) {
 		t.Errorf("Theorems map is incorrect.\nGot:  %v\nWant: %v", theorems, expectedTheorems)
+	}
+}
+
+func TestLoadTheorems(t *testing.T) {
+	// Create a temporary directory for testing
+	tmpDir, err := os.MkdirTemp("", "testdir")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// Test case 1: theorems.json exists
+	theoremsFilePath, err := getTheoremsFilePath(tmpDir)
+	if err != nil {
+		t.Fatalf("Failed to get theorems file path: %v", err)
+	}
+
+	err = ensureSessionDirExists(tmpDir)
+	if err != nil {
+		t.Fatalf("Failed to create session dir: %v", err)
+	}
+
+	expectedTheorems := map[string]string{
+		"Theorem 1": "/path/to/theorem1.md",
+		"Theorem 2": "/path/to/theorem2.md",
+	}
+	data, err := json.Marshal(expectedTheorems)
+	if err != nil {
+		t.Fatalf("Failed to marshal expected theorems: %v", err)
+	}
+
+	err = os.WriteFile(theoremsFilePath, data, 0644)
+	if err != nil {
+		t.Fatalf("Failed to write theorems.json: %v", err)
+	}
+
+	loadedTheorems, err := LoadTheorems(tmpDir)
+	if err != nil {
+		t.Fatalf("LoadTheorems failed: %v", err)
+	}
+
+	if !reflect.DeepEqual(loadedTheorems, expectedTheorems) {
+		t.Errorf("Loaded theorems are incorrect.\nGot:  %v\nWant: %v", loadedTheorems, expectedTheorems)
+	}
+
+	// Test case 2: theorems.json does not exist
+	err = os.Remove(theoremsFilePath)
+	if err != nil {
+		t.Fatalf("Failed to remove theorems.json: %v", err)
+	}
+
+	loadedTheorems, err = LoadTheorems(tmpDir)
+	if err != nil {
+		t.Fatalf("LoadTheorems failed when file does not exist: %v", err)
+	}
+
+	if len(loadedTheorems) != 0 {
+		t.Errorf("Expected empty map when theorems.json does not exist, but got %v", loadedTheorems)
 	}
 }
 
