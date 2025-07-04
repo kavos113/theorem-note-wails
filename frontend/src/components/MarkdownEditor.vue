@@ -673,4 +673,31 @@ defineExpose({
   object-fit: cover;
   border-left: 1px solid #e1e8ed;
 }
+
+.markdown-preview :deep(.theorem) {
+  margin-top: 10px;
+  padding: 0.5em;
+  border: 3px solid var(--accent-color);
+  border-radius: 5px;
+  box-shadow: 0 8px 10px rgba(0, 0, 0, 0.1);
+  background-color: var(--sidebar-bg);
+}
+
+.markdown-preview :deep(.theorem-title) {
+  font-weight: bold;
+  margin: 0;
+  padding: 5px 5px 0 5px;
+  font-size: 1.5em;
+  border-bottom: 2px solid var(--color-text);
+}
+
+.markdown-preview :deep(.theorem-content) p,
+.markdown-preview :deep(.theorem-content) ul,
+.markdown-preview :deep(.theorem-content) ol {
+  margin: 0;
+}
+
+.markdown-preview :deep(.theorem-content) h3 {
+  margin-bottom: 5px;
+}
 </style>

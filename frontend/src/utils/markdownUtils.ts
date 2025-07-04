@@ -269,7 +269,7 @@ const rehypeTheoremMarkdown = () => {
           children: [
             {
               type: 'element',
-              tagName: 'h3',
+              tagName: 'h4',
               properties: { className: ['theorem-title'] },
               children: [{ type: 'text', value: nameAttr || 'Theorem' }]
             },
