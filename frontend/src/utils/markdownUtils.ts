@@ -11,7 +11,8 @@ import rehypeSlug from 'rehype-slug';
 import { visit } from 'unist-util-visit';
 import mermaid from 'mermaid';
 import type { Element, Root } from 'hast';
-import type { Text, Root as RemarkRoot } from 'mdast';
+import type { Root as RemarkRoot, Text } from 'mdast';
+import rehypeRaw from 'rehype-raw';
 
 let projectRoot = '';
 
@@ -226,6 +227,65 @@ const remarkInternalLinks = () => {
   };
 };
 
+const rehypeTheoremMarkdown = () => {
+  return (tree: Root) => {
+    visit(tree, 'element', (node: Element, index?: number, parent?: Root | Element) => {
+      if (node.tagName === 'theorem' && parent?.children && index !== undefined) {
+        // theorem要素のname属性を取得
+        const nameAttr = node.properties?.name as string;
+
+        // theorem内のテキストコンテンツを収集
+        let content = '';
+        const collectText = (children: any[]) => {
+          for (const child of children) {
+            if (child.type === 'text') {
+              content += child.value;
+              console.log(child.value);
+            } else if (child.children) {
+              collectText(child.children);
+            }
+          }
+        };
+        collectText(node.children);
+
+        const processor = unified()
+          .use(remarkParse)
+          .use(remarkBreaks)
+          .use(remarkGfm)
+          .use(remarkMath)
+          .use(remarkRehype, { allowDangerousHtml: true });
+
+        const mdast = processor.parse(content);
+        const hast = processor.runSync(mdast);
+
+        console.log(hast);
+
+        parent.children[index] = {
+          type: 'element',
+          tagName: 'div',
+          properties: {
+            className: ['theorem']
+          },
+          children: [
+            {
+              type: 'element',
+              tagName: 'h3',
+              properties: { className: ['theorem-title'] },
+              children: [{ type: 'text', value: nameAttr || 'Theorem' }]
+            },
+            {
+              type: 'element',
+              tagName: 'div',
+              properties: { className: ['theorem-content'] },
+              children: hast.children as Element[]
+            }
+          ]
+        };
+      }
+    });
+  };
+};
+
 export const markdownToHtml = async (markdown: string): Promise<string> => {
   const parsed = await unified()
     .use(remarkParse)
@@ -234,6 +294,8 @@ export const markdownToHtml = async (markdown: string): Promise<string> => {
     .use(remarkInternalLinks)
     .use(remarkMath)
     .use(remarkRehype, { allowDangerousHtml: true })
+    .use(rehypeRaw)
+    .use(rehypeTheoremMarkdown)
     .use(rehypeSlug)
     .use(rehypeKatex)
     .use(rehypeHighlight)
