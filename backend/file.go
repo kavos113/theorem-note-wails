@@ -244,5 +244,12 @@ func LoadTheorems(rootDir string) (map[string]string, error) {
 		return nil, err
 	}
 
+	for k, v := range theorems {
+		theorems[k], err = filepath.Rel(rootDir, v)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return theorems, nil
 }

@@ -211,16 +211,15 @@ const remarkInternalLinks = () => {
             value: value.slice(lastIndex, match.index)
           });
         }
-        const [path, header] = match[1].split('|');
-        const text = header ? `${path}#${header}` : path;
+        const [path, displayName] = match[1].split('|');
+        const text = displayName || path;
         newNodes.push({
           type: 'link',
           url: '#',
           data: {
             hProperties: {
               'data-internal-link': 'true',
-              'data-path': path,
-              ...(header ? { 'data-header': header } : {})
+              'data-path': path
             }
           },
           children: [{ type: 'text', value: text }]
