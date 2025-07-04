@@ -26,4 +26,4 @@ export function SaveSession(arg1: string, arg2: Array<string>): Promise<void>;
 
 export function SetLastOpened(arg1: string): Promise<void>;
 
-export function WriteFile(arg1: string, arg2: string): Promise<void>;
+export function WriteFile(arg1: string, arg2: string, arg3: string): Promise<void>;

@@ -4,9 +4,11 @@ import (
 	"cmp"
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 )
 
@@ -16,6 +18,12 @@ type FileItem struct {
 	IsDirectory bool
 	Children    []FileItem
 }
+
+const (
+	sessionDirPath   = ".theorem-note"
+	sessionFileName  = "session.json"
+	theoremsFileName = "theorems.json"
+)
 
 func GetNewDirectoryFileTree(ctx context.Context) (string, []FileItem, error) {
 	path, err := runtime.OpenDirectoryDialog(ctx, runtime.OpenDialogOptions{
@@ -74,12 +82,12 @@ func ReadFile(path string) (string, error) {
 	return string(data), nil
 }
 
-func WriteFile(path string, content string) error {
+func WriteFile(path string, content string, rootDir string) error {
 	err := os.WriteFile(path, []byte(content), 0644)
 	if err != nil {
 		return err
 	}
-	return nil
+	return extractAndSaveTheorems(path, content, rootDir)
 }
 
 func CreateFile(path string) error {
@@ -96,8 +104,65 @@ func CreateDirectory(path string) error {
 	return os.Mkdir(path, 0755)
 }
 
-const sessionDirPath = ".theorem-note"
-const sessionFileName = "session.json"
+func getTheoremsFilePath(rootDir string) (string, error) {
+	if rootDir == "" {
+		return "", os.ErrInvalid
+	}
+	return filepath.Join(rootDir, sessionDirPath, theoremsFileName), nil
+}
+
+func extractAndSaveTheorems(path string, content string, rootDir string) error {
+	re := regexp.MustCompile(`<theorem name="([^"]+)">`)
+	matches := re.FindAllStringSubmatch(content, -1)
+
+	if len(matches) == 0 {
+		return nil
+	}
+
+	if err := ensureSessionDirExists(rootDir); err != nil {
+		return err
+	}
+
+	theoremsFilePath, err := getTheoremsFilePath(rootDir)
+	if err != nil {
+		return err
+	}
+
+	theorems := make(map[string]string)
+	if _, err := os.Stat(theoremsFilePath); !os.IsNotExist(err) {
+		data, err := os.ReadFile(theoremsFilePath)
+		if err != nil {
+			return err
+		}
+		if len(data) > 0 {
+			if err := json.Unmarshal(data, &theorems); err != nil {
+				return err
+			}
+		}
+	}
+
+	for k, v := range theorems {
+		if v == path {
+			delete(theorems, k)
+		}
+	}
+
+	for _, match := range matches {
+		if len(match) > 1 {
+			theoremName := match[1]
+			theorems[theoremName] = path
+		}
+	}
+
+	data, err := json.MarshalIndent(theorems, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Saving theorems to %s: %v\n", theoremsFilePath, theorems)
+
+	return os.WriteFile(theoremsFilePath, data, 0644)
+}
 
 func getSessionFilePath(rootDir string) (string, error) {
 	if rootDir == "" {

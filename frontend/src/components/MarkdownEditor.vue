@@ -75,7 +75,7 @@ const saveFile = async (): Promise<void> => {
 
   try {
     isSaving.value = true;
-    await WriteFile(props.selectedFilePath, localContent.value);
+    await WriteFile(props.selectedFilePath, localContent.value, getProjectRoot());
     emit('file-saved');
     console.log('ファイルが保存されました');
   } catch (err) {

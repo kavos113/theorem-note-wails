@@ -49,8 +49,8 @@ func (a *App) ReadFile(path string) (string, error) {
 	return backend.ReadFile(path)
 }
 
-func (a *App) WriteFile(path string, content string) error {
-	return backend.WriteFile(path, content)
+func (a *App) WriteFile(path string, content string, rootDir string) error {
+	return backend.WriteFile(path, content, rootDir)
 }
 
 func (a *App) CreateFile(path string) error {

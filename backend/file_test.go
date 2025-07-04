@@ -207,8 +207,15 @@ func TestReadFile(t *testing.T) {
 }
 
 func TestWriteFile(t *testing.T) {
+	// Create a temporary directory for testing
+	tmpDir, err := os.MkdirTemp("", "testdir")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
 	// Create a temporary file for testing
-	tmpFile, err := os.CreateTemp("", "testfile.txt")
+	tmpFile, err := os.CreateTemp(tmpDir, "testfile.txt")
 	if err != nil {
 		t.Fatalf("Failed to create temp file: %v", err)
 	}
@@ -219,7 +226,7 @@ func TestWriteFile(t *testing.T) {
 	expectedContent := "hello world"
 
 	// Test writing to the file
-	err = WriteFile(tmpFile.Name(), expectedContent)
+	err = WriteFile(tmpFile.Name(), expectedContent, "")
 	if err != nil {
 		t.Fatalf("WriteFile failed: %v", err)
 	}
@@ -233,6 +240,53 @@ func TestWriteFile(t *testing.T) {
 	// Compare the written content with the expected content
 	if string(actualContent) != expectedContent {
 		t.Errorf("WriteFile wrote unexpected content.\nGot:  %s\nWant: %s", string(actualContent), expectedContent)
+	}
+}
+
+func TestWriteFile_WithTheoremTag(t *testing.T) {
+	// Create a temporary directory for testing
+	tmpDir, err := os.MkdirTemp("", "testdir")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// Create a dummy file path
+	filePath := filepath.Join(tmpDir, "test.md")
+
+	// Define content with a <theorem> tag
+	content := "This is a test file with a theorem.\n<theorem name=\"Test Theorem\">Some theorem content.</theorem>"
+
+	// Call WriteFile
+	err = WriteFile(filePath, content, "")
+	if err != nil {
+		t.Fatalf("WriteFile failed: %v", err)
+	}
+
+	// Check if .theorem-note/theorems.json is created
+	theoremsFilePath := filepath.Join(tmpDir, ".theorem-note", "theorems.json")
+	if _, err := os.Stat(theoremsFilePath); os.IsNotExist(err) {
+		t.Fatalf("theorems.json was not created")
+	}
+
+	// Check the content of theorems.json
+	file, err := os.ReadFile(theoremsFilePath)
+	if err != nil {
+		t.Fatalf("Failed to read theorems.json: %v", err)
+	}
+
+	var theorems map[string]string
+	err = json.Unmarshal(file, &theorems)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal theorems.json: %v", err)
+	}
+
+	expectedTheorems := map[string]string{
+		"Test Theorem": filePath,
+	}
+
+	if !reflect.DeepEqual(theorems, expectedTheorems) {
+		t.Errorf("Theorems map is incorrect.\nGot:  %v\nWant: %v", theorems, expectedTheorems)
 	}
 }
 
@@ -324,4 +378,3 @@ func TestCreateDirectory(t *testing.T) {
 		t.Fatalf("Expected an error when creating a directory that already exists, but got nil")
 	}
 }
-

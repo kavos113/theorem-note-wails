@@ -50,6 +50,6 @@ export function SetLastOpened(arg1) {
   return window['go']['main']['App']['SetLastOpened'](arg1);
 }
 
-export function WriteFile(arg1, arg2) {
-  return window['go']['main']['App']['WriteFile'](arg1, arg2);
+export function WriteFile(arg1, arg2, arg3) {
+  return window['go']['main']['App']['WriteFile'](arg1, arg2, arg3);
 }
