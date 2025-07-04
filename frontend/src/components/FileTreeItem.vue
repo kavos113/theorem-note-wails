@@ -1,16 +1,18 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { backend } from '../../wailsjs/go/models';
 import FileItem = backend.FileItem;
 
 const props = defineProps<{
   item: FileItem;
   selectedItem?: string | null;
+  expandedItems?: Set<string>;
 }>();
 
 const emit = defineEmits<{
   (e: 'select-file', path: string, header?: string): void;
   (e: 'select-item', path: string): void;
+  (e: 'expand-item', path: string): void;
 }>();
 
 const isExpanded = ref(false);
@@ -23,10 +25,17 @@ const handleClick = (): void => {
   emit('select-item', props.item.Path);
   if (props.item.IsDirectory) {
     isExpanded.value = !isExpanded.value;
+    emit('expand-item', props.item.Path);
   } else {
     emit('select-file', props.item.Path, undefined);
   }
 };
+
+onMounted(() => {
+  if (props.expandedItems && props.expandedItems.has(props.item.Path)) {
+    isExpanded.value = true;
+  }
+});
 </script>
 
 <template>
@@ -54,8 +63,10 @@ const handleClick = (): void => {
         :key="child.Path"
         :item="child"
         :selected-item="selectedItem"
+        :expanded-items="expandedItems"
         @select-file="$emit('select-file', $event)"
         @select-item="$emit('select-item', $event)"
+        @expand-item="$emit('expand-item', $event)"
       />
     </ul>
   </li>

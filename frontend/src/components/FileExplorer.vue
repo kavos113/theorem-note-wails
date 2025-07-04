@@ -27,6 +27,7 @@ const fileTree = ref<FileItem[]>([]);
 const loading = ref<boolean>(false);
 const error = ref<string | null>(null);
 const selectedItem = ref<string | null>(null);
+const expandedItems = ref<Set<string>>(new Set());
 
 // フォルダを開く
 const openFolder = async (): Promise<void> => {
@@ -125,6 +126,15 @@ const createDirectory = async () => {
   }
 };
 
+const handleExpandItem = (path: string) => {
+  if (expandedItems.value.has(path)) {
+    expandedItems.value.delete(path);
+  } else {
+    expandedItems.value.add(path);
+  }
+  console.log(expandedItems.value);
+};
+
 defineExpose({
   createFile,
   createDirectory
@@ -177,8 +187,10 @@ watch(
             :key="item.Path"
             :item="item"
             :selected-item="selectedItem"
+            :expanded-items="expandedItems"
             @select-file="$emit('select-file', $event)"
             @select-item="selectedItem = $event"
+            @expand-item="handleExpandItem"
           />
         </ul>
       </div>

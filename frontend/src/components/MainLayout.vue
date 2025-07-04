@@ -27,7 +27,8 @@ const selectedFilePath = ref<string | undefined>(undefined);
 const fileExplorerRef = ref<InstanceType<typeof FileExplorer> | null>(null);
 
 const handleKeyDown = (event: KeyboardEvent) => {
-  if (event.ctrlKey && event.key === 'n') {
+  console.log(event);
+  if (event.ctrlKey && event.code === 'KeyN') {
     event.preventDefault();
     if (event.shiftKey) {
       // Ctrl + Shift + N for new folder
@@ -84,7 +85,7 @@ const handleFileClosed = async (): Promise<void> => {
   if (tabBarRef.value) {
     currentFile.value = tabBarRef.value.activeFile || null;
     selectedFilePath.value = currentFile.value?.path;
-    
+
     const filePaths = tabBarRef.value.openFiles.map((file: OpenFile) => file.path);
     try {
       await SaveSession(props.rootPath, filePaths);
