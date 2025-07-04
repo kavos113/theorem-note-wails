@@ -159,8 +159,6 @@ func extractAndSaveTheorems(path string, content string, rootDir string) error {
 		return err
 	}
 
-	fmt.Printf("Saving theorems to %s: %v\n", theoremsFilePath, theorems)
-
 	return os.WriteFile(theoremsFilePath, data, 0644)
 }
 
