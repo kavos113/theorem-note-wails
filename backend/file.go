@@ -22,6 +22,18 @@ const (
 	sessionDirPath   = ".theorem-note"
 	sessionFileName  = "session.json"
 	theoremsFileName = "theorems.json"
+	fileTemplate     = `<theorem name="">
+### 変数・条件
+
+
+### 主張
+
+</theorem>
+
+<details>
+<summary>証明</summary>
+
+</details>`
 )
 
 func GetNewDirectoryFileTree(ctx context.Context) (string, []FileItem, error) {
@@ -93,7 +105,7 @@ func CreateFile(path string) error {
 	if _, err := os.Stat(path); !os.IsNotExist(err) {
 		return os.ErrExist
 	}
-	return os.WriteFile(path, []byte(""), 0644)
+	return os.WriteFile(path, []byte(fileTemplate), 0644)
 }
 
 func CreateDirectory(path string) error {
