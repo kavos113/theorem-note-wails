@@ -79,11 +79,18 @@ const handleFileOpened = (file: OpenFile): void => {
   selectedFilePath.value = file.path;
 };
 
-const handleFileClosed = (): void => {
+const handleFileClosed = async (): Promise<void> => {
   // タブが閉じられた後の現在のアクティブファイルを取得
   if (tabBarRef.value) {
     currentFile.value = tabBarRef.value.activeFile || null;
     selectedFilePath.value = currentFile.value?.path;
+    
+    const filePaths = tabBarRef.value.openFiles.map((file: OpenFile) => file.path);
+    try {
+      await SaveSession(props.rootPath, filePaths);
+    } catch (err) {
+      console.error('セッションの保存に失敗しました:', err);
+    }
   }
 };
 
