@@ -702,4 +702,11 @@ defineExpose({
 .markdown-preview :deep(.theorem-content) h3 {
   margin-bottom: 5px;
 }
+
+.markdown-preview :deep(.cm-codeblock) {
+  background-color: #2c313a;
+  border-radius: 4px;
+  padding: 10px;
+  font-family: 'Fira Code', 'Courier New', monospace;
+}
 </style>
