@@ -34,6 +34,10 @@ export function LoadSession(arg1) {
   return window['go']['main']['App']['LoadSession'](arg1);
 }
 
+export function LoadTheorems(arg1) {
+  return window['go']['main']['App']['LoadTheorems'](arg1);
+}
+
 export function ReadFile(arg1) {
   return window['go']['main']['App']['ReadFile'](arg1);
 }

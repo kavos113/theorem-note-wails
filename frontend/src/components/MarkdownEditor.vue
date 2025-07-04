@@ -180,7 +180,9 @@ onMounted(async () => {
     codeMirrorInstance.value = createCodeMirrorEditor(
       editorContainer.value,
       localContent.value,
-      handleCodeMirrorChange
+      handleCodeMirrorChange,
+      false, // isDarkTheme
+      getProjectRoot()
     );
   }
   setupScrollListeners();

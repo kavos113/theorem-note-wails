@@ -10,7 +10,7 @@ import rehypeKatex from 'rehype-katex';
 import rehypeSlug from 'rehype-slug';
 import { visit } from 'unist-util-visit';
 import mermaid from 'mermaid';
-import type { Element, Root } from 'hast';
+import type { Element, Root, ElementContent } from 'hast';
 import type { Root as RemarkRoot, Text } from 'mdast';
 import rehypeRaw from 'rehype-raw';
 
@@ -187,7 +187,21 @@ const remarkInternalLinks = () => {
       const regex = /\[\[(.*?)]]/g;
       let match;
       let lastIndex = 0;
-      const newNodes: any[] = [];
+      const newNodes: (
+        | Text
+        | {
+            type: 'link';
+            url: string;
+            data: {
+              hProperties: {
+                'data-internal-link': string;
+                'data-path': string;
+                'data-header'?: string;
+              };
+            };
+            children: Text[];
+          }
+      )[] = [];
       const value = node.value;
 
       while ((match = regex.exec(value)) !== null) {
@@ -236,12 +250,12 @@ const rehypeTheoremMarkdown = () => {
 
         // theorem内のテキストコンテンツを収集
         let content = '';
-        const collectText = (children: any[]) => {
+        const collectText = (children: ElementContent[]) => {
           for (const child of children) {
             if (child.type === 'text') {
               content += child.value;
               console.log(child.value);
-            } else if (child.children) {
+            } else if (child.type === 'element' && child.children) {
               collectText(child.children);
             }
           }

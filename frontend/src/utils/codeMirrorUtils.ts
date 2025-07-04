@@ -3,6 +3,8 @@ import { EditorView } from '@codemirror/view';
 import { basicSetup } from 'codemirror';
 import { markdown } from '@codemirror/lang-markdown';
 import { oneDark } from '@codemirror/theme-one-dark';
+import { autocompletion, CompletionContext, CompletionResult } from '@codemirror/autocomplete';
+import { LoadTheorems } from '../../wailsjs/go/main/App';
 
 export interface CodeMirrorInstance {
   view: EditorView;
@@ -12,11 +14,38 @@ export interface CodeMirrorInstance {
   setEditorStyle: (style: Record<string, string>) => void;
 }
 
+const theoremAutocompletion = (rootDir: string) => {
+  return autocompletion({
+    override: [
+      async (context: CompletionContext): Promise<CompletionResult | null> => {
+        const match = context.matchBefore(/\[\[([^\]]*)$/);
+        if (!match) {
+          return null;
+        }
+
+        const theorems = await LoadTheorems(rootDir);
+        const options = Object.entries(theorems).map(([name, path]) => ({
+          label: name,
+          apply: `${path}|${name}`,
+          type: 'keyword'
+        }));
+
+        return {
+          from: match.from + 2,
+          options,
+          validFor: /^\[\[[^\]]*$/
+        };
+      }
+    ]
+  });
+};
+
 export const createCodeMirrorEditor = (
   container: HTMLElement,
   initialContent: string,
   onChange: (content: string) => void,
-  isDarkTheme = false
+  isDarkTheme = false,
+  rootDir: string
 ): CodeMirrorInstance => {
   const editorTheme = EditorView.theme({
     '&': {
@@ -44,7 +73,8 @@ export const createCodeMirrorEditor = (
         onChange(update.state.doc.toString());
       }
     }),
-    editorTheme
+    editorTheme,
+    theoremAutocompletion(rootDir)
   ];
 
   if (isDarkTheme) {

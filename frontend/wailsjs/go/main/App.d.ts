@@ -18,6 +18,8 @@ export function Greet(arg1: string): Promise<string>;
 
 export function LoadSession(arg1: string): Promise<Array<string>>;
 
+export function LoadTheorems(arg1: string): Promise<Record<string, string>>;
+
 export function ReadFile(arg1: string): Promise<string>;
 
 export function SaveFontSettings(arg1: string, arg2: backend.FontSettings): Promise<void>;
